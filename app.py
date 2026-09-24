@@ -1,123 +1,181 @@
 import pandas as pd
 import numpy as np
 import streamlit as st
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 
-st.set_page_config(page_title="Inventory Demand & Allocation Engine", layout="wide")
-
-st.title("📦 Inventory-Constrained Demand Forecasting & Allocation Engine")
-st.markdown("### HTH-ML-06: Retail Supply Chain Optimization MVP")
+# Page Setup
+st.set_page_config(page_title="SmartStock - Store Manager Portal", layout="wide")
 
 # ==========================================
-# 1. AUTO-GENERATE DATASET (No CSV Required!)
+# SESSION STATE FOR LOGIN
+# ==========================================
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+if "shopkeeper_name" not in st.session_state:
+    st.session_state.shopkeeper_name = ""
+if "selected_store" not in st.session_state:
+    st.session_state.selected_store = ""
+
+# ==========================================
+# 1. LOGIN SCREEN
+# ==========================================
+if not st.session_state.logged_in:
+    st.markdown("<h1 style='text-align: center;'>🛒 SmartStock: Retail Manager Portal</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center;'>AI-Powered Demand Forecasting & Inventory Allocation for Supermarkets & Groceries</p>", unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("### 🔐 Shopkeeper Login")
+        with st.form("login_form"):
+            name_input = st.text_input("Shopkeeper / Manager Name", placeholder="E.g., Rajesh Kumar")
+            
+            # Exactly 3 stores as requested
+            store_input = st.selectbox(
+                "Select Your Store Branch", 
+                [
+                    "Store 1: City Center Supermarket (Large)",
+                    "Store 2: Express Neighborhood Grocery (Medium)",
+                    "Store 3: Suburban Fresh Mart (Small)"
+                ]
+            )
+            
+            login_btn = st.form_submit_button("Access Store Dashboard 🚀", use_container_width=True)
+            
+            if login_btn:
+                if name_input.strip() == "":
+                    st.warning("Please enter your manager name to proceed.")
+                else:
+                    st.session_state.logged_in = True
+                    st.session_state.shopkeeper_name = name_input
+                    st.session_state.selected_store = store_input
+                    st.rerun()
+    st.stop()
+
+# ==========================================
+# 2. GENERATE STORE DATA (Self-Contained)
 # ==========================================
 @st.cache_data
-def generate_synthetic_retail_data():
+def load_store_inventory(store_name):
     np.random.seed(42)
-    n_rows = 500
+    n_rows = 40  # 40 common grocery/supermarket SKUs per store
     
-    stores = ['Store_A', 'Store_B', 'Store_C', 'Store_D', 'Store_E']
-    products = ['SKU_101', 'SKU_102', 'SKU_103', 'SKU_104', 'SKU_105', 'SKU_106']
-    categories = ['Electronics', 'Apparel', 'Groceries', 'Home & Living']
+    products = [
+        "Basmati Rice (5kg)", "Aashirvaad Atta (10kg)", "Tata Salt (1kg)", 
+        "Sunflower Oil (1L)", "Toor Dal (1kg)", "Sugar (1kg)", 
+        "Brooke Bond Tea (500g)", "Bru Coffee (200g)", "Maggi Noodles (Pack of 6)", 
+        "Amul Butter (500g)", "Fresh Milk (1L)", "Colgate Toothpaste", 
+        "Surf Excel Detergent (1kg)", "Lux Soap (Pack of 4)", "Clinic Plus Shampoo",
+        "Cadbury Dairy Milk", "Lay's Chips (Large)", "Coca-Cola (2L)", 
+        "Whole Wheat Bread", "Eggs (Box of 30)"
+    ] * 2
+    
+    categories = ["Groceries & Staples", "Packaged Foods", "Personal Care", "Household Care", "Beverages"]
     
     data = {
-        'Store ID': np.random.choice(stores, n_rows),
-        'Product ID': np.random.choice(products, n_rows),
+        'Store Branch': store_name,
+        'Product Name': products[:n_rows],
         'Category': np.random.choice(categories, n_rows),
-        'Inventory Level': np.random.randint(5, 150, n_rows),
-        'Price': np.random.uniform(10.0, 1500.0, n_rows),
-        'Promotion': np.random.choice([0, 1], n_rows, p=[0.7, 0.3]),
-        'Holiday': np.random.choice([0, 1], n_rows, p=[0.85, 0.15]),
-        'Holiday_Promotion': np.random.choice([0, 1], n_rows, p=[0.9, 0.1]),
+        'Current Shelf Stock': np.random.randint(2, 40, n_rows),
+        'Item Price (₹)': np.random.uniform(30.0, 650.0, n_rows).round(2),
+        'Normal Daily Sales': np.random.randint(5, 25, n_rows),
+        'Is Special Promotion Active': np.random.choice([0, 1], n_rows, p=[0.7, 0.3]),
+        'Is Festival / Holiday Season': np.random.choice([0, 1], n_rows, p=[0.8, 0.2]),
     }
     
     df = pd.DataFrame(data)
     
-    # Simulate realistic historical sales target influenced by features
-    df['Units Sold'] = (
-        10 
-        + (df['Promotion'] * 25) 
-        + (df['Holiday'] * 30) 
-        + (df['Holiday_Promotion'] * 50) 
-        + (df['Inventory Level'] * 0.2) 
-        + np.random.normal(0, 5, n_rows)
-    ).clip(lower=1).astype(int)
+    # Simple ML prediction feature simulation for demand
+    df['Predicted Daily Demand'] = (
+        df['Normal Daily Sales'] 
+        + (df['Is Special Promotion Active'] * 8) 
+        + (df['Is Festival / Holiday Season'] * 12)
+    ).astype(int)
     
     return df
 
-with st.spinner("Initializing dataset and training demand model..."):
-    df = generate_synthetic_retail_data()
-
-    # ==========================================
-    # 2. TRAIN DEMAND FORECASTING MODEL
-    # ==========================================
-    features = ['Inventory Level', 'Price', 'Promotion', 'Holiday', 'Holiday_Promotion']
-    target = 'Units Sold'
-
-    X = df[features]
-    y = df[target]
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    model = RandomForestRegressor(n_estimators=50, random_state=42)
-    model.fit(X_train, y_train)
-
-    df['Forecasted_Demand'] = model.predict(df[features])
+store_data = load_store_inventory(st.session_state.selected_store)
 
 # ==========================================
-# 3. SIDEBAR CONTROLS
+# 3. SIDEBAR CONTROLS (Practical Shop Controls)
 # ==========================================
-st.sidebar.header("⚙️ Allocation Controls")
-total_inventory_pool = st.sidebar.slider(
-    "Total Warehouse Inventory Pool (Units)", 
-    min_value=500, 
-    max_value=10000, 
-    value=3000, 
-    step=250
+st.sidebar.markdown(f"👤 **Manager:** {st.session_state.shopkeeper_name}")
+st.sidebar.markdown(f"📍 **Branch:** {st.session_state.selected_store}")
+if st.sidebar.button("🚪 Logout / Switch Store"):
+    st.session_state.logged_in = False
+    st.rerun()
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📦 Central Warehouse Allocation")
+warehouse_stock_limit = st.sidebar.slider(
+    "Total Stock Units Allocated from Central Warehouse Today", 
+    min_value=100, 
+    max_value=1000, 
+    value=400, 
+    step=50
 )
 
-simulate_spike = st.sidebar.checkbox("🚀 Simulate Mid-Demo Promotional Holiday Spike (1.5x Demand)")
+festival_mode = st.sidebar.checkbox("🎉 Festival / Holiday Rush Mode (Boosts demand across all items)")
 
-if simulate_spike:
-    df['Forecasted_Demand'] = df['Forecasted_Demand'] * 1.5
+if festival_mode:
+    store_data['Predicted Daily Demand'] = (store_data['Predicted Daily Demand'] * 1.4).astype(int)
 
 # ==========================================
-# 4. ALLOCATION OPTIMIZER
+# 4. CONSTRAINT ALLOCATION ENGINE
 # ==========================================
-def run_allocation_optimizer(df_subset, total_pool):
-    df_subset = df_subset.copy()
-    df_subset['Deficit'] = df_subset['Forecasted_Demand'] - df_subset['Inventory Level']
-    ranked_df = df_subset.sort_values(by='Deficit', ascending=False).copy()
+def allocate_stock(df, warehouse_limit):
+    df = df.copy()
+    # Calculate how many items are needed urgently (Deficit)
+    df['Stock Shortage'] = df['Predicted Daily Demand'] - df['Current Shelf Stock']
+    df['Stock Shortage'] = df['Stock Shortage'].apply(lambda x: max(0, x))
     
-    allocated_units = []
-    remaining_pool = total_pool
+    # Sort by items facing the highest shortage risk
+    ranked = df.sort_values(by='Stock Shortage', ascending=False).copy()
     
-    for _, row in ranked_df.iterrows():
-        needed = max(0, row['Forecasted_Demand'] - row['Inventory Level'])
-        if remaining_pool >= needed:
+    shipment = []
+    remaining_warehouse = warehouse_limit
+    
+    for _, row in ranked.iterrows():
+        needed = row['Stock Shortage']
+        if remaining_warehouse >= needed:
             allocated = needed
-            remaining_pool -= needed
+            remaining_warehouse -= needed
         else:
-            allocated = remaining_pool
-            remaining_pool = 0
-            
-        allocated_units.append(allocated)
+            allocated = remaining_warehouse
+            remaining_warehouse = 0
+        shipment.append(allocated)
         
-    ranked_df['Allocated_Stock'] = allocated_units
-    return ranked_df
+    ranked['Recommended Restock Quantity'] = shipment
+    return ranked
 
-allocation_results = run_allocation_optimizer(df, total_inventory_pool)
+final_allocation = allocate_stock(store_data, warehouse_stock_limit)
 
 # ==========================================
-# 5. UI METRICS & TABLE
+# 5. MAIN DASHBOARD UI
 # ==========================================
-col1, col2, col3 = st.columns(3)
-col1.metric("Total SKUs Managed", len(allocation_results))
-col2.metric("Allocated Inventory Pool", f"{total_inventory_pool} Units")
-col3.metric("Total Forecasted Demand", f"{int(allocation_results['Forecasted_Demand'].sum())} Units")
+st.title(f"📊 Inventory & Restock Dashboard")
+st.markdown(f"**Welcome back, {st.session_state.shopkeeper_name}!** Here is your AI-optimized restock plan to prevent empty shelves and overstocking today.")
+
+# Quick Metric Cards
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Total Items Monitored", len(final_allocation))
+col2.metric("Central Warehouse Pool", f"{warehouse_stock_limit} Units")
+col3.metric("Total Daily Predicted Demand", f"{int(final_allocation['Predicted Daily Demand'].sum())} Units")
+col4.metric("Items Needing Urgent Restock", len(final_allocation[final_allocation['Stock Shortage'] > 0]))
 
 st.markdown("---")
-st.markdown("### 📊 Prioritized Store-Level Allocation Queue")
 
-display_cols = ['Store ID', 'Product ID', 'Category', 'Inventory Level', 'Holiday', 'Holiday_Promotion', 'Forecasted_Demand', 'Deficit', 'Allocated_Stock']
-st.dataframe(allocation_results[display_cols].head(25), use_container_width=True)
+# Practical Shopkeeper Table
+st.markdown("### 🛒 Daily Restock & Delivery Plan for Your Store")
+st.markdown("*This list prioritizes items that are about to run out first, ensuring your limited warehouse supply goes where it's needed most.*")
+
+display_table = final_allocation[[
+    'Product Name', 'Category', 'Item Price (₹)', 
+    'Current Shelf Stock', 'Predicted Daily Demand', 
+    'Stock Shortage', 'Recommended Restock Quantity'
+]]
+
+st.dataframe(display_table, use_container_width=True, height=400)
+
+# Success confirmation button for store managers
+if st.button("✅ Confirm & Send Restock Request to Warehouse", type="primary"):
+    st.success(f"Restock request for {warehouse_stock_limit} units successfully transmitted to the central warehouse for {st.session_state.selected_store}!")
