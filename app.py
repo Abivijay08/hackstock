@@ -2,26 +2,29 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 
-# Page Setup & Dark Theme Styling with Clean Padding
+# Page Setup & Clean Light Theme Styling
 st.set_page_config(page_title="SmartStock - Supermarket Manager Portal", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
     <style>
-        .main { background-color: #0e1117; color: #fafafa; padding: 2rem; }
-        .stSidebar { background-color: #161b22; padding: 1.5rem 1rem; }
+        /* Main Light Theme Background */
+        .main { background-color: #f8fafc; color: #1e293b; padding: 2rem; }
+        .stSidebar { background-color: #e2e8f0; padding: 1.5rem 1rem; }
         
+        /* Metric Cards Styling */
         div[data-testid="stMetric"] {
-            background-color: #1f2937;
-            border: 1px solid #374151;
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
             padding: 20px;
             border-radius: 12px;
-            color: #ffffff;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            color: #1e293b;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
             margin-bottom: 1rem;
         }
-        div[data-testid="stMetric"] label { color: #9ca3af !important; font-size: 0.9rem !important; }
-        div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: #f3f4f6 !important; font-size: 1.8rem !important; }
+        div[data-testid="stMetric"] label { color: #64748b !important; font-size: 0.9rem !important; }
+        div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: #0f172a !important; font-size: 1.8rem !important; }
 
+        /* Buttons & Inputs */
         .stButton button { 
             border-radius: 8px; 
             font-weight: 600; 
@@ -30,9 +33,9 @@ st.markdown("""
             border: none;
             padding: 0.6rem 1.2rem;
         }
-        .stButton button:hover { background-color: #1d4ed8; }
+        .stButton button:hover { background-color: #1d4ed8; color: white; }
         
-        h1, h2, h3 { color: #f9fafb !important; font-family: sans-serif; }
+        h1, h2, h3 { color: #0f172a !important; font-family: sans-serif; }
         .element-container { margin-bottom: 1rem; }
     </style>
 """, unsafe_allow_html=True)
@@ -54,8 +57,8 @@ if not st.session_state.logged_in:
     st.markdown("<br><br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
-        st.markdown("<h1 style='text-align: center; color: #60a5fa; margin-bottom: 0.2rem;'>SmartStock AI</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #9ca3af; margin-bottom: 2rem;'>Inventory & Demand Optimization Portal</p>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; color: #2563eb; margin-bottom: 0.2rem;'>SmartStock AI</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #64748b; margin-bottom: 2rem;'>Inventory & Demand Optimization Portal</p>", unsafe_allow_html=True)
         
         with st.container():
             st.markdown("### Manager Authentication")
@@ -183,7 +186,6 @@ def allocate_stock(df, warehouse_limit):
         
     ranked['Recommended Restock Quantity'] = shipment
     
-    # Replaced text status with a minimal numerical Urgency Index (1 to 5 scale)
     def calculate_urgency(row):
         if row['Current Shelf Stock'] <= 3:
             return 5
@@ -209,7 +211,7 @@ st.markdown("Real-time predictive stock allocation ensuring limited warehouse sh
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# Metrics Row with extra padding
+# Metrics Row with padding
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("Total SKUs Tracked", len(final_allocation))
 col2.metric("Warehouse Pool Limit", f"{warehouse_stock_limit} Units")
