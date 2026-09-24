@@ -7,11 +7,9 @@ st.set_page_config(page_title="SmartStock - Supermarket Manager Portal", layout=
 
 st.markdown("""
     <style>
-        /* Main Light Theme Background */
         .main { background-color: #f8fafc; color: #1e293b; padding: 2rem; }
         .stSidebar { background-color: #e2e8f0; padding: 1.5rem 1rem; }
         
-        /* Metric Cards Styling */
         div[data-testid="stMetric"] {
             background-color: #ffffff;
             border: 1px solid #cbd5e1;
@@ -24,7 +22,6 @@ st.markdown("""
         div[data-testid="stMetric"] label { color: #64748b !important; font-size: 0.9rem !important; }
         div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: #0f172a !important; font-size: 1.8rem !important; }
 
-        /* Buttons & Inputs */
         .stButton button { 
             border-radius: 8px; 
             font-weight: 600; 
@@ -68,9 +65,9 @@ if not st.session_state.logged_in:
                 store_input = st.selectbox(
                     "Select Store Branch", 
                     [
-                        "Store 1: City Center Supermarket (Large)",
-                        "Store 2: Express Neighborhood Grocery (Medium)",
-                        "Store 3: Suburban Fresh Mart (Small)"
+                        "Store 1: Fresh Fruit & Produce Market",
+                        "Store 2: City Center Supermarket (Groceries)",
+                        "Store 3: Express Neighborhood Mart (Daily Needs)"
                     ]
                 )
                 
@@ -88,31 +85,42 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ==========================================
-# 2. GENERATE STORE DATA
+# 2. GENERATE STORE DATA (Branch Specific)
 # ==========================================
 @st.cache_data
 def load_store_inventory(store_name):
     np.random.seed(42)
-    n_rows = 45 
+    n_rows = 35 
     
-    products = [
-        "Basmati Rice (5kg)", "Aashirvaad Atta (10kg)", "Tata Salt (1kg)", 
-        "Sunflower Oil (1L)", "Toor Dal (1kg)", "Sugar (1kg)", 
-        "Brooke Bond Tea (500g)", "Bru Coffee (200g)", "Maggi Noodles (Pack of 6)", 
-        "Amul Butter (500g)", "Fresh Milk (1L)", "Colgate Toothpaste", 
-        "Surf Excel Detergent (1kg)", "Lux Soap (Pack of 4)", "Clinic Plus Shampoo",
-        "Cadbury Dairy Milk", "Lay's Chips (Large)", "Coca-Cola (2L)", 
-        "Whole Wheat Bread", "Eggs (Box of 30)"
-    ] * 3
-    
-    categories = ["Groceries & Staples", "Packaged Foods", "Personal Care", "Household Care", "Beverages"]
+    # Customize products based on the selected store branch
+    if "Store 1" in store_name:
+        products = [
+            "Fresh Apple (1kg)", "Valencia Orange (1kg)", "Cavendish Banana (Dozen)", 
+            "Alphonso Mango (1kg)", "Seedless Grapes (500g)", "Fresh Papaya (1pc)", 
+            "Ripe Pineapple (1pc)", "Watermelon (1pc)", "Pomegranate (1kg)", 
+            "Sweet Lemon Mosambi (1kg)", "Guava (1kg)", "Kiwi Fruit (Pack of 3)"
+        ] * 3
+        categories = ["Fresh Fruits", "Organic Produce", "Seasonal Fruits"]
+    elif "Store 2" in store_name:
+        products = [
+            "Basmati Rice (5kg)", "Aashirvaad Atta (10kg)", "Tata Salt (1kg)", 
+            "Sunflower Oil (1L)", "Toor Dal (1kg)", "Sugar (1kg)", 
+            "Brooke Bond Tea (500g)", "Bru Coffee (200g)", "Maggi Noodles (Pack of 6)"
+        ] * 4
+        categories = ["Groceries & Staples", "Packaged Foods"]
+    else:
+        products = [
+            "Amul Butter (500g)", "Fresh Milk (1L)", "Colgate Toothpaste", 
+            "Surf Excel Detergent (1kg)", "Lux Soap (Pack of 4)", "Whole Wheat Bread", "Eggs (Box of 30)"
+        ] * 5
+        categories = ["Dairy & Bakery", "Personal Care", "Household Care"]
     
     data = {
         'Store Branch': store_name,
         'Product Name': products[:n_rows],
         'Category': np.random.choice(categories, n_rows),
         'Current Shelf Stock': np.random.randint(2, 45, n_rows),
-        'Item Price (Rs.)': np.random.uniform(30.0, 750.0, n_rows).round(2),
+        'Item Price (Rs.)': np.random.uniform(30.0, 350.0, n_rows).round(2),
         'Normal Daily Sales': np.random.randint(6, 25, n_rows),
         'Special Promotion Active': np.random.choice([0, 1], n_rows, p=[0.7, 0.3]),
         'Festival Season Active': np.random.choice([0, 1], n_rows, p=[0.8, 0.2]),
