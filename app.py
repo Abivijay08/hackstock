@@ -3,8 +3,17 @@ import numpy as np
 import streamlit as st
 from sklearn.ensemble import RandomForestRegressor
 
-# Page Setup
-st.set_page_config(page_title="SmartStock - Store Manager Portal", layout="wide")
+# Page Setup & Modern Styling
+st.set_page_config(page_title="SmartStock - Supermarket Manager Portal", layout="wide")
+
+# Custom CSS for Modern UI
+st.markdown("""
+    <style>
+        .main { background-color: #f8f9fa; }
+        .stButton button { border-radius: 8px; font-weight: bold; }
+        .metric-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    </style>
+""", unsafe_allow_html=True)
 
 # ==========================================
 # SESSION STATE FOR LOGIN
@@ -17,38 +26,41 @@ if "selected_store" not in st.session_state:
     st.session_state.selected_store = ""
 
 # ==========================================
-# 1. LOGIN SCREEN
+# 1. INTERACTIVE LOGIN SCREEN
 # ==========================================
 if not st.session_state.logged_in:
-    st.markdown("<h1 style='text-align: center;'>🛒 SmartStock: Retail Manager Portal</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center;'>AI-Powered Demand Forecasting & Inventory Allocation for Supermarkets & Groceries</p>", unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns([1, 2, 1])
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
-        st.markdown("### 🔐 Shopkeeper Login")
-        with st.form("login_form"):
-            name_input = st.text_input("Shopkeeper / Manager Name", placeholder="E.g., Rajesh Kumar")
-            
-            # Exactly 3 stores as requested
-            store_input = st.selectbox(
-                "Select Your Store Branch", 
-                [
-                    "Store 1: City Center Supermarket (Large)",
-                    "Store 2: Express Neighborhood Grocery (Medium)",
-                    "Store 3: Suburban Fresh Mart (Small)"
-                ]
-            )
-            
-            login_btn = st.form_submit_button("Access Store Dashboard 🚀", use_container_width=True)
-            
-            if login_btn:
-                if name_input.strip() == "":
-                    st.warning("Please enter your manager name to proceed.")
-                else:
-                    st.session_state.logged_in = True
-                    st.session_state.shopkeeper_name = name_input
-                    st.session_state.selected_store = store_input
-                    st.rerun()
+        st.markdown("<h1 style='text-align: center; color: #1E3A8A;'>🛒 SmartStock AI</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #6B7280;'>Next-Gen Inventory & Demand Optimization for Retailers</p>", unsafe_allow_html=True)
+        
+        with st.container():
+            st.markdown("### 🔐 Manager Portal Login")
+            with st.form("login_form"):
+                name_input = st.text_input("Store Manager Name", placeholder="E.g., Abishek V")
+                
+                # Exactly 3 store branches
+                store_input = st.selectbox(
+                    "Select Store Branch", 
+                    [
+                        "Store 1: City Center Supermarket (Large)",
+                        "Store 2: Express Neighborhood Grocery (Medium)",
+                        "Store 3: Suburban Fresh Mart (Small)"
+                    ]
+                )
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                login_btn = st.form_submit_button("Launch Dashboard 🚀", use_container_width=True)
+                
+                if login_btn:
+                    if name_input.strip() == "":
+                        st.warning("Please enter your name to proceed.")
+                    else:
+                        st.session_state.logged_in = True
+                        st.session_state.shopkeeper_name = name_input
+                        st.session_state.selected_store = store_input
+                        st.rerun()
     st.stop()
 
 # ==========================================
@@ -57,7 +69,7 @@ if not st.session_state.logged_in:
 @st.cache_data
 def load_store_inventory(store_name):
     np.random.seed(42)
-    n_rows = 40  # 40 common grocery/supermarket SKUs per store
+    n_rows = 45 
     
     products = [
         "Basmati Rice (5kg)", "Aashirvaad Atta (10kg)", "Tata Salt (1kg)", 
@@ -67,7 +79,7 @@ def load_store_inventory(store_name):
         "Surf Excel Detergent (1kg)", "Lux Soap (Pack of 4)", "Clinic Plus Shampoo",
         "Cadbury Dairy Milk", "Lay's Chips (Large)", "Coca-Cola (2L)", 
         "Whole Wheat Bread", "Eggs (Box of 30)"
-    ] * 2
+    ] * 3
     
     categories = ["Groceries & Staples", "Packaged Foods", "Personal Care", "Household Care", "Beverages"]
     
@@ -75,20 +87,20 @@ def load_store_inventory(store_name):
         'Store Branch': store_name,
         'Product Name': products[:n_rows],
         'Category': np.random.choice(categories, n_rows),
-        'Current Shelf Stock': np.random.randint(2, 40, n_rows),
-        'Item Price (₹)': np.random.uniform(30.0, 650.0, n_rows).round(2),
-        'Normal Daily Sales': np.random.randint(5, 25, n_rows),
+        'Current Shelf Stock': np.random.randint(2, 45, n_rows),
+        'Item Price (₹)': np.random.uniform(30.0, 750.0, n_rows).round(2),
+        'Normal Daily Sales': np.random.randint(6, 25, n_rows),
         'Is Special Promotion Active': np.random.choice([0, 1], n_rows, p=[0.7, 0.3]),
         'Is Festival / Holiday Season': np.random.choice([0, 1], n_rows, p=[0.8, 0.2]),
     }
     
     df = pd.DataFrame(data)
     
-    # Simple ML prediction feature simulation for demand
+    # ML Demand Simulation
     df['Predicted Daily Demand'] = (
         df['Normal Daily Sales'] 
-        + (df['Is Special Promotion Active'] * 8) 
-        + (df['Is Festival / Holiday Season'] * 12)
+        + (df['Is Special Promotion Active'] * 10) 
+        + (df['Is Festival / Holiday Season'] * 14)
     ).astype(int)
     
     return df
@@ -96,39 +108,43 @@ def load_store_inventory(store_name):
 store_data = load_store_inventory(st.session_state.selected_store)
 
 # ==========================================
-# 3. SIDEBAR CONTROLS (Practical Shop Controls)
+# 3. INTERACTIVE SIDEBAR CONTROLS
 # ==========================================
-st.sidebar.markdown(f"👤 **Manager:** {st.session_state.shopkeeper_name}")
-st.sidebar.markdown(f"📍 **Branch:** {st.session_state.selected_store}")
-if st.sidebar.button("🚪 Logout / Switch Store"):
+st.sidebar.markdown(f"### 👋 Welcome, {st.session_state.shopkeeper_name}")
+st.sidebar.markdown(f"📍 **Branch:** `{st.session_state.selected_store}`")
+
+if st.sidebar.button("🚪 Logout / Switch Branch", use_container_width=True):
     st.session_state.logged_in = False
     st.rerun()
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 📦 Central Warehouse Allocation")
+st.sidebar.markdown("### ⚙️ Warehouse & Allocation Settings")
+
 warehouse_stock_limit = st.sidebar.slider(
-    "Total Stock Units Allocated from Central Warehouse Today", 
-    min_value=100, 
-    max_value=1000, 
-    value=400, 
+    "📦 Central Warehouse Supply Limit (Units)", 
+    min_value=150, 
+    max_value=1200, 
+    value=500, 
     step=50
 )
 
-festival_mode = st.sidebar.checkbox("🎉 Festival / Holiday Rush Mode (Boosts demand across all items)")
+festival_mode = st.sidebar.toggle("🎉 Festival / Holiday Surge Mode", value=False)
+flash_sale = st.toggle("⚡ Flash Sale / Weekend Rush Active", value=False)
 
 if festival_mode:
-    store_data['Predicted Daily Demand'] = (store_data['Predicted Daily Demand'] * 1.4).astype(int)
+    store_data['Predicted Daily Demand'] = (store_data['Predicted Daily Demand'] * 1.3).astype(int)
+if flash_sale:
+    store_data['Predicted Daily Demand'] = (store_data['Predicted Daily Demand'] * 1.25).astype(int)
 
 # ==========================================
-# 4. CONSTRAINT ALLOCATION ENGINE
+# 4. CONSTRAINT ALLOCATION OPTIMIZER ENGINE
 # ==========================================
 def allocate_stock(df, warehouse_limit):
     df = df.copy()
-    # Calculate how many items are needed urgently (Deficit)
     df['Stock Shortage'] = df['Predicted Daily Demand'] - df['Current Shelf Stock']
     df['Stock Shortage'] = df['Stock Shortage'].apply(lambda x: max(0, x))
     
-    # Sort by items facing the highest shortage risk
+    # Priority sorting based on scarcity gap
     ranked = df.sort_values(by='Stock Shortage', ascending=False).copy()
     
     shipment = []
@@ -145,37 +161,68 @@ def allocate_stock(df, warehouse_limit):
         shipment.append(allocated)
         
     ranked['Recommended Restock Quantity'] = shipment
+    
+    # Assign visual status flags for UI
+    def get_status(row):
+        if row['Current Shelf Stock'] <= 3:
+            return "🚨 Critical Stockout Risk"
+        elif row['Stock Shortage'] > 5:
+            return "⚠️ Restock Recommended"
+        else:
+            return "✅ Stock Adequate"
+            
+    ranked['Inventory Status'] = ranked.apply(get_status, axis=1)
     return ranked
 
 final_allocation = allocate_stock(store_data, warehouse_stock_limit)
 
 # ==========================================
-# 5. MAIN DASHBOARD UI
+# 5. MAIN INTERACTIVE DASHBOARD
 # ==========================================
-st.title(f"📊 Inventory & Restock Dashboard")
-st.markdown(f"**Welcome back, {st.session_state.shopkeeper_name}!** Here is your AI-optimized restock plan to prevent empty shelves and overstocking today.")
+st.title("📊 SmartStore Manager Dashboard")
+st.markdown("Real-time predictive stock allocation ensuring your limited warehouse shipments prevent empty shelves and maximize sales.")
 
-# Quick Metric Cards
+# Metrics Row
 col1, col2, col3, col4 = st.columns(4)
-col1.metric("Total Items Monitored", len(final_allocation))
-col2.metric("Central Warehouse Pool", f"{warehouse_stock_limit} Units")
-col3.metric("Total Daily Predicted Demand", f"{int(final_allocation['Predicted Daily Demand'].sum())} Units")
-col4.metric("Items Needing Urgent Restock", len(final_allocation[final_allocation['Stock Shortage'] > 0]))
+col1.metric("📦 Total SKUs Tracked", len(final_allocation))
+col2.metric("🚛 Warehouse Allocation Pool", f"{warehouse_stock_limit} Units")
+col3.metric("🔥 Total Predicted Demand", f"{int(final_allocation['Predicted Daily Demand'].sum())} Units")
+critical_count = len(final_allocation[final_allocation['Inventory Status'] == "🚨 Critical Stockout Risk"])
+col4.metric("🚨 Critical Stock Alerts", critical_count, delta=-critical_count if critical_count > 0 else "All Clear", delta_color="inverse")
 
 st.markdown("---")
 
-# Practical Shopkeeper Table
-st.markdown("### 🛒 Daily Restock & Delivery Plan for Your Store")
-st.markdown("*This list prioritizes items that are about to run out first, ensuring your limited warehouse supply goes where it's needed most.*")
+# Filter view option
+st.markdown("### 🛒 Prioritized Restock Queue")
+filter_option = st.radio(
+    "Filter View:", 
+    ["All Items", "🚨 Critical Stockout Risk Only", "⚠️ Restock Recommended Only"], 
+    horizontal=True
+)
 
-display_table = final_allocation[[
-    'Product Name', 'Category', 'Item Price (₹)', 
-    'Current Shelf Stock', 'Predicted Daily Demand', 
-    'Stock Shortage', 'Recommended Restock Quantity'
-]]
+if filter_option == "🚨 Critical Stockout Risk Only":
+    display_df = final_allocation[final_allocation['Inventory Status'] == "🚨 Critical Stockout Risk"]
+elif filter_option == "⚠️ Restock Recommended Only":
+    display_df = final_allocation[final_allocation['Inventory Status'] == "⚠️ Restock Recommended"]
+else:
+    display_df = final_allocation
 
-st.dataframe(display_table, use_container_width=True, height=400)
+# Formatted Table Display
+st.dataframe(
+    display_df[[
+        'Product Name', 'Category', 'Item Price (₹)', 
+        'Current Shelf Stock', 'Predicted Daily Demand', 
+        'Stock Shortage', 'Recommended Restock Quantity', 'Inventory Status'
+    ]],
+    use_container_width=True,
+    height=420
+)
 
-# Success confirmation button for store managers
-if st.button("✅ Confirm & Send Restock Request to Warehouse", type="primary"):
-    st.success(f"Restock request for {warehouse_stock_limit} units successfully transmitted to the central warehouse for {st.session_state.selected_store}!")
+# Interactive Restock Submission
+col_a, col_b = st.columns([2, 1])
+with col_a:
+    st.info("💡 **AI Recommendation Note:** Items with high shortages are prioritized automatically to ensure high-demand goods never run out under warehouse caps.")
+with col_b:
+    if st.button("✅ Confirm & Dispatch Order", type="primary", use_container_width=True):
+        st.balloons()
+        st.success(f"Successfully ordered {warehouse_stock_limit} units for {st.session_state.selected_store}!")
