@@ -3,15 +3,40 @@ import numpy as np
 import streamlit as st
 from sklearn.ensemble import RandomForestRegressor
 
-# Page Setup & Modern Styling
-st.set_page_config(page_title="SmartStock - Supermarket Manager Portal", layout="wide")
+# Page Setup & Dark Theme Styling
+st.set_page_config(page_title="SmartStock - Supermarket Manager Portal", layout="wide", initial_sidebar_state="expanded")
 
-# Custom CSS for Modern UI
+# Custom Dark Theme CSS
 st.markdown("""
     <style>
-        .main { background-color: #f8f9fa; }
-        .stButton button { border-radius: 8px; font-weight: bold; }
-        .metric-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        /* Main Background & Font Color */
+        .main { background-color: #0e1117; color: #fafafa; }
+        .stSidebar { background-color: #161b22; }
+        
+        /* Metric Cards Styling */
+        div[data-testid="stMetric"] {
+            background-color: #1f2937;
+            border: 1px solid #374151;
+            padding: 15px;
+            border-radius: 10px;
+            color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        div[data-testid="stMetric"] label { color: #9ca3af !important; }
+        div[data-testid="stMetric"] div[data-testid="stMetricValue"] { color: #f3f4f6 !important; }
+
+        /* Buttons & Inputs */
+        .stButton button { 
+            border-radius: 8px; 
+            font-weight: bold; 
+            background-color: #2563eb; 
+            color: white; 
+            border: none;
+        }
+        .stButton button:hover { background-color: #1d4ed8; }
+        
+        /* Headers */
+        h1, h2, h3 { color: #f9fafb !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -26,14 +51,14 @@ if "selected_store" not in st.session_state:
     st.session_state.selected_store = ""
 
 # ==========================================
-# 1. INTERACTIVE LOGIN SCREEN
+# 1. INTERACTIVE LOGIN SCREEN (Dark Theme)
 # ==========================================
 if not st.session_state.logged_in:
     st.markdown("<br><br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
-        st.markdown("<h1 style='text-align: center; color: #1E3A8A;'>🛒 SmartStock AI</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #6B7280;'>Next-Gen Inventory & Demand Optimization for Retailers</p>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; color: #60a5fa;'>🛒 SmartStock AI</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #9ca3af;'>Next-Gen Inventory & Demand Optimization for Retailers</p>", unsafe_allow_html=True)
         
         with st.container():
             st.markdown("### 🔐 Manager Portal Login")
@@ -129,7 +154,7 @@ warehouse_stock_limit = st.sidebar.slider(
 )
 
 festival_mode = st.sidebar.toggle("🎉 Festival / Holiday Surge Mode", value=False)
-flash_sale = st.toggle("⚡ Flash Sale / Weekend Rush Active", value=False)
+flash_sale = st.sidebar.toggle("⚡ Flash Sale / Weekend Rush Active", value=False)
 
 if festival_mode:
     store_data['Predicted Daily Demand'] = (store_data['Predicted Daily Demand'] * 1.3).astype(int)
@@ -162,7 +187,6 @@ def allocate_stock(df, warehouse_limit):
         
     ranked['Recommended Restock Quantity'] = shipment
     
-    # Assign visual status flags for UI
     def get_status(row):
         if row['Current Shelf Stock'] <= 3:
             return "🚨 Critical Stockout Risk"
@@ -185,10 +209,10 @@ st.markdown("Real-time predictive stock allocation ensuring your limited warehou
 # Metrics Row
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("📦 Total SKUs Tracked", len(final_allocation))
-col2.metric("🚛 Warehouse Allocation Pool", f"{warehouse_stock_limit} Units")
-col3.metric("🔥 Total Predicted Demand", f"{int(final_allocation['Predicted Daily Demand'].sum())} Units")
+col2.metric("🚛 Warehouse Pool", f"{warehouse_stock_limit} Units")
+col3.metric("🔥 Total Demand", f"{int(final_allocation['Predicted Daily Demand'].sum())} Units")
 critical_count = len(final_allocation[final_allocation['Inventory Status'] == "🚨 Critical Stockout Risk"])
-col4.metric("🚨 Critical Stock Alerts", critical_count, delta=-critical_count if critical_count > 0 else "All Clear", delta_color="inverse")
+col4.metric("🚨 Critical Alerts", critical_count)
 
 st.markdown("---")
 
@@ -221,8 +245,8 @@ st.dataframe(
 # Interactive Restock Submission
 col_a, col_b = st.columns([2, 1])
 with col_a:
-    st.info("💡 **AI Recommendation Note:** Items with high shortages are prioritized automatically to ensure high-demand goods never run out under warehouse caps.")
+    st.info("💡 **AI Recommendation Note:** Items facing high shortages are prioritized automatically under your central warehouse supply limits.")
 with col_b:
-    if st.button("✅ Confirm & Dispatch Order", type="primary", use_container_width=True):
+    if st.button("✅ Confirm & Dispatch Order", use_container_width=True):
         st.balloons()
         st.success(f"Successfully ordered {warehouse_stock_limit} units for {st.session_state.selected_store}!")
